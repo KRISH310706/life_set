@@ -1,8 +1,4 @@
-# Render Blueprint - One-click deploy for LifeSet
-# https://render.com/docs/blueprint-spec
-
 services:
-  # Backend API (FastAPI)
   - type: web
     name: lifeset-api
     runtime: python
@@ -13,13 +9,12 @@ services:
       - key: PYTHON_VERSION
         value: "3.11"
       - key: GROQ_API_KEY
-        sync: false  # You'll set this manually in Render dashboard
+        sync: false
       - key: DATABASE_URL
         value: sqlite:///./lifeset.db
     healthCheckPath: /
     plan: free
 
-  # Frontend (React/Vite)
   - type: web
     name: lifeset-frontend
     runtime: static
