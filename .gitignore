@@ -1,0 +1,44 @@
+# Ignore the virtual environment (it's too big and can be recreated)
+venv/
+ENV/
+bin/
+include/
+lib/
+backend/venv/
+
+# Ignore sensitive secrets
+.env
+.env.local
+.env.production.local
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore Node modules
+node_modules/
+frontend/node_modules/
+
+# Ignore build outputs
+dist/
+build/
+frontend/dist/
+
+# Ignore IDE files
+.vscode/
+.idea/
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore database files (optional - remove if you want to include)
+*.db
+
+# Ignore uploaded files
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Ignore log files
+*.log
