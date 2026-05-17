@@ -52,7 +52,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center px-4 py-8 relative overflow-hidden">
       {/* Animated background blobs */}
       <motion.div 
         className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-green-200/50 to-emerald-300/40 rounded-full blur-3xl"

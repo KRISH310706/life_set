@@ -9,11 +9,42 @@ def get_db():
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
+def migrate_db():
+    """Add new columns to existing database if they don't exist"""
+    conn = get_db()
+    c = conn.cursor()
+    
+    # Get existing columns in users table
+    c.execute("PRAGMA table_info(users)")
+    existing_columns = {row[1] for row in c.fetchall()}
+    
+    # New columns to add for doctor verification
+    new_columns = [
+        ("college_name", "TEXT"),
+        ("graduation_year", "INTEGER"),
+        ("years_of_practice", "INTEGER"),
+        ("certificate_path", "TEXT"),
+        ("certificate_verified", "INTEGER DEFAULT 0"),
+        ("verification_status", "TEXT DEFAULT 'pending'"),
+        ("verification_notes", "TEXT"),
+    ]
+    
+    for col_name, col_type in new_columns:
+        if col_name not in existing_columns:
+            try:
+                c.execute(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}")
+                print(f"✅ Added column: {col_name}")
+            except Exception as e:
+                print(f"⚠️ Could not add column {col_name}: {e}")
+    
+    conn.commit()
+    conn.close()
+
 def init_db():
     conn = get_db()
     c = conn.cursor()
 
-    # ── Users (extended with role, phone, OTP) ──────────────────────────────
+    # ── Users (extended with role, phone, OTP, doctor verification) ──────────────────────────────
     c.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,6 +59,13 @@ def init_db():
             bio TEXT,
             age INTEGER,
             gender TEXT,
+            college_name TEXT,
+            graduation_year INTEGER,
+            years_of_practice INTEGER,
+            certificate_path TEXT,
+            certificate_verified INTEGER DEFAULT 0,
+            verification_status TEXT DEFAULT 'pending',
+            verification_notes TEXT,
             otp_code TEXT,
             otp_expiry TIMESTAMP,
             is_verified INTEGER DEFAULT 0,
@@ -148,3 +186,6 @@ def init_db():
     conn.commit()
     conn.close()
     print("✅ Database v3 initialized")
+    
+    # Run migrations for existing databases
+    migrate_db()

@@ -9,6 +9,9 @@ const api = axios.create({ baseURL: API_BASE_URL })
 
 export const authAPI = {
   register:   (data)  => api.post('/auth/register', data),
+  registerDoctor: (formData) => api.post('/auth/register-doctor', formData, { 
+    headers: { 'Content-Type': 'multipart/form-data' } 
+  }),
   login:      (data)  => api.post('/auth/login', data),
   verifyOtp:  (data)  => api.post('/auth/verify-otp', data),
   resendOtp:  (email) => api.post(`/auth/resend-otp?email=${email}`),

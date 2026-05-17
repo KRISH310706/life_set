@@ -33,8 +33,11 @@ export default function Register() {
   const [role, setRole]   = useState('patient')
   const [form, setForm]   = useState({
     name: '', email: '', password: '', phone: '',
-    specialization: '', license_number: '', hospital_affiliation: ''
+    specialization: '', license_number: '', hospital_affiliation: '',
+    college_name: '', graduation_year: '', years_of_practice: ''
   })
+  const [certificate, setCertificate] = useState(null)
+  const [certificatePreview, setCertificatePreview] = useState(null)
   const [otp, setOtp]             = useState(['', '', '', '', '', ''])
   const [regEmail, setRegEmail]   = useState('')
   const [error, setError]         = useState('')
@@ -42,6 +45,7 @@ export default function Register() {
   const [loading, setLoading]     = useState(false)
   const [resendTimer, setResendTimer] = useState(0)
   const inputRefs = useRef([])
+  const fileInputRef = useRef(null)
   const { login } = useAuth()
   const navigate  = useNavigate()
 
@@ -53,15 +57,100 @@ export default function Register() {
 
   const f = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
 
+  const handleCertificateChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
+      if (!validTypes.includes(file.type)) {
+        setError('Certificate must be JPG, PNG, or PDF format')
+        return
+      }
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Certificate file must be less than 10MB')
+        return
+      }
+      setCertificate(file)
+      setError('')
+      
+      // Create preview for images
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onloadend = () => setCertificatePreview(reader.result)
+        reader.readAsDataURL(file)
+      } else {
+        setCertificatePreview(null)
+      }
+    }
+  }
+
   const handleRegister = async (e) => {
     e.preventDefault()
     setError(''); setLoading(true)
+    
     try {
-      const res  = await authAPI.register({ ...form, role })
-      login(res.data)
-      setRegEmail(form.email)
-      setResendTimer(60)
-      setStep(2)
+      if (role === 'doctor') {
+        // Validate all mandatory doctor fields
+        if (!form.specialization || !form.license_number || !form.hospital_affiliation ||
+            !form.college_name || !form.graduation_year || !form.years_of_practice) {
+          setError('All fields are mandatory for doctor registration')
+          setLoading(false)
+          return
+        }
+        
+        if (!certificate) {
+          setError('Please upload your medical certificate for verification')
+          setLoading(false)
+          return
+        }
+        
+        // Validate graduation year
+        const currentYear = new Date().getFullYear()
+        const gradYear = parseInt(form.graduation_year)
+        if (gradYear < 1950 || gradYear > currentYear) {
+          setError(`Graduation year must be between 1950 and ${currentYear}`)
+          setLoading(false)
+          return
+        }
+        
+        // Validate years of practice
+        const practiceYears = parseInt(form.years_of_practice)
+        const maxPractice = currentYear - gradYear
+        if (practiceYears < 0 || practiceYears > maxPractice) {
+          setError(`Years of practice cannot exceed ${maxPractice} years since graduation`)
+          setLoading(false)
+          return
+        }
+        
+        // Create FormData for doctor registration
+        const formData = new FormData()
+        formData.append('name', form.name)
+        formData.append('email', form.email)
+        formData.append('password', form.password)
+        formData.append('phone', form.phone || '')
+        formData.append('specialization', form.specialization)
+        formData.append('license_number', form.license_number)
+        formData.append('hospital_affiliation', form.hospital_affiliation)
+        formData.append('college_name', form.college_name)
+        formData.append('graduation_year', form.graduation_year)
+        formData.append('years_of_practice', form.years_of_practice)
+        formData.append('certificate', certificate)
+        
+        const res = await authAPI.registerDoctor(formData)
+        login(res.data)
+        setRegEmail(form.email)
+        setResendTimer(60)
+        setSuccess('✅ Certificate verified successfully!')
+        setTimeout(() => setStep(2), 1000)
+      } else {
+        // Patient registration (existing flow)
+        const res = await authAPI.register({ ...form, role })
+        login(res.data)
+        setRegEmail(form.email)
+        setResendTimer(60)
+        setStep(2)
+      }
     } catch (err) {
       setError(err.response?.data?.detail || 'Registration failed. Please try again.')
     } finally { setLoading(false) }
@@ -117,6 +206,15 @@ export default function Register() {
       setError(err.response?.data?.detail || 'Failed to resend OTP.')
     } finally { setLoading(false) }
   }
+
+  // Specialization options
+  const specializations = [
+    'General Physician', 'Cardiologist', 'Dermatologist', 'Endocrinologist',
+    'Gastroenterologist', 'Neurologist', 'Oncologist', 'Orthopedic Surgeon',
+    'Pediatrician', 'Psychiatrist', 'Pulmonologist', 'Radiologist',
+    'Urologist', 'Gynecologist', 'Ophthalmologist', 'ENT Specialist',
+    'Dentist', 'Physiotherapist', 'Other'
+  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center px-4 py-10 relative overflow-hidden">
@@ -220,6 +318,16 @@ export default function Register() {
                     <span>⚠️</span> {error}
                   </motion.div>
                 )}
+                
+                {success && step === 1 && (
+                  <motion.div 
+                    className="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm mb-5 flex items-center gap-2"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <span>✅</span> {success}
+                  </motion.div>
+                )}
 
                 {/* Role toggle */}
                 <div className="flex bg-gray-100 rounded-2xl p-1.5 mb-6 gap-1">
@@ -295,27 +403,164 @@ export default function Register() {
                         transition={{ duration: 0.3 }}
                       >
                         <p className="text-xs font-bold text-green-700 uppercase tracking-wider flex items-center gap-2">
-                          <span>🩺</span> Doctor Details
+                          <span>🩺</span> Doctor Details (All fields mandatory)
                         </p>
+                        
+                        {/* Specialization dropdown */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Specialization <span className="text-red-500">*</span>
+                          </label>
+                          <select 
+                            value={form.specialization} 
+                            onChange={f('specialization')}
+                            required
+                            className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 focus:bg-white transition-all"
+                          >
+                            <option value="">Select your specialization</option>
+                            {specializations.map(spec => (
+                              <option key={spec} value={spec}>{spec}</option>
+                            ))}
+                          </select>
+                        </div>
+                        
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Specialization</label>
-                            <input type="text" value={form.specialization} onChange={f('specialization')} 
-                              className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 focus:bg-white transition-all" 
-                              placeholder="e.g. Cardiologist"/>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">License No.</label>
-                            <input type="text" value={form.license_number} onChange={f('license_number')} 
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              License No. <span className="text-red-500">*</span>
+                            </label>
+                            <input 
+                              type="text" 
+                              value={form.license_number} 
+                              onChange={f('license_number')}
+                              required
                               className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 focus:bg-white transition-all" 
                               placeholder="MCI-XXXXX"/>
                           </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Graduation Year <span className="text-red-500">*</span>
+                            </label>
+                            <input 
+                              type="number" 
+                              value={form.graduation_year} 
+                              onChange={f('graduation_year')}
+                              required
+                              min="1950"
+                              max={new Date().getFullYear()}
+                              className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 focus:bg-white transition-all" 
+                              placeholder="2015"/>
+                          </div>
                         </div>
+                        
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">Hospital / Clinic</label>
-                          <input type="text" value={form.hospital_affiliation} onChange={f('hospital_affiliation')} 
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            College / University <span className="text-red-500">*</span>
+                          </label>
+                          <input 
+                            type="text" 
+                            value={form.college_name} 
+                            onChange={f('college_name')}
+                            required
                             className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 focus:bg-white transition-all" 
-                            placeholder="Apollo Hospital, Mumbai"/>
+                            placeholder="AIIMS Delhi, Grant Medical College, etc."/>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Hospital / Clinic <span className="text-red-500">*</span>
+                            </label>
+                            <input 
+                              type="text" 
+                              value={form.hospital_affiliation} 
+                              onChange={f('hospital_affiliation')}
+                              required
+                              className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 focus:bg-white transition-all" 
+                              placeholder="Apollo Hospital"/>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Years of Practice <span className="text-red-500">*</span>
+                            </label>
+                            <input 
+                              type="number" 
+                              value={form.years_of_practice} 
+                              onChange={f('years_of_practice')}
+                              required
+                              min="0"
+                              max="70"
+                              className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 focus:bg-white transition-all" 
+                              placeholder="5"/>
+                          </div>
+                        </div>
+                        
+                        {/* Certificate Upload */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Medical Certificate <span className="text-red-500">*</span>
+                          </label>
+                          <p className="text-xs text-gray-500 mb-2">
+                            Upload your medical degree certificate for verification (JPG, PNG, or PDF, max 10MB)
+                          </p>
+                          
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleCertificateChange}
+                            accept=".jpg,.jpeg,.png,.pdf"
+                            className="hidden"
+                          />
+                          
+                          <motion.div
+                            onClick={() => fileInputRef.current?.click()}
+                            className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
+                              certificate 
+                                ? 'border-green-400 bg-green-50' 
+                                : 'border-gray-200 hover:border-green-400 hover:bg-green-50/50'
+                            }`}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
+                          >
+                            {certificate ? (
+                              <div className="flex items-center justify-center gap-3">
+                                {certificatePreview ? (
+                                  <img 
+                                    src={certificatePreview} 
+                                    alt="Certificate preview" 
+                                    className="w-16 h-16 object-cover rounded-lg"
+                                  />
+                                ) : (
+                                  <span className="text-3xl">📄</span>
+                                )}
+                                <div className="text-left">
+                                  <p className="text-sm font-semibold text-green-700">{certificate.name}</p>
+                                  <p className="text-xs text-gray-500">
+                                    {(certificate.size / 1024 / 1024).toFixed(2)} MB
+                                  </p>
+                                  <p className="text-xs text-green-600 mt-1">Click to change</p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div>
+                                <span className="text-3xl">📤</span>
+                                <p className="text-sm text-gray-600 mt-2">Click to upload certificate</p>
+                                <p className="text-xs text-gray-400">JPG, PNG, or PDF</p>
+                              </div>
+                            )}
+                          </motion.div>
+                        </div>
+                        
+                        {/* Verification notice */}
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                          <p className="text-xs text-amber-800 flex items-start gap-2">
+                            <span className="text-lg">⚠️</span>
+                            <span>
+                              Your certificate will be verified before account creation. 
+                              Only valid medical certificates with matching license numbers will be accepted.
+                              Fake certificates will be rejected.
+                            </span>
+                          </p>
                         </div>
                       </motion.div>
                     )}
