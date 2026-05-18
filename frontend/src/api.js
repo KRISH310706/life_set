@@ -1,7 +1,7 @@
 import axios from 'axios'
 
-// API URL - works for both local dev and Vercel deployment
-const API_BASE_URL = '/api'
+// API URL - /api routes to backend service on Vercel
+const API_BASE_URL = '/api/api'
 
 const api = axios.create({ baseURL: API_BASE_URL })
 
