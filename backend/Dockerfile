@@ -2,19 +2,18 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install tesseract for OCR
-RUN apt-get update && apt-get install -y \
-    tesseract-ocr \
-    libgl1-mesa-glx \
-    && rm -rf /var/lib/apt/lists/*
-
+# Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy app code
 COPY . .
 
-RUN mkdir -p uploads
+# Create uploads directory
+RUN mkdir -p uploads/certificates
 
-EXPOSE 8000
+# Expose port
+EXPOSE 7860
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Run the app
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
