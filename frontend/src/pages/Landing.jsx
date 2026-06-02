@@ -211,25 +211,28 @@ export default function Landing() {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="fixed top-0 inset-x-0 z-50 bg-white/70 backdrop-blur-xl border-b border-green-100/50"
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-1.5 sm:gap-2 group flex-shrink-0 min-w-0">
             <motion.div 
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30 flex-shrink-0"
               whileHover={{ scale: 1.1, rotate: 5 }}
               whileTap={{ scale: 0.95 }}
             >
-              <span className="text-white text-base sm:text-lg font-bold">L</span>
+              <span className="text-white text-sm sm:text-lg font-bold">L</span>
             </motion.div>
-            <span className="font-display text-lg sm:text-xl text-green-800 group-hover:text-green-600 transition-colors">LifeSet</span>
+            <span className="font-display text-base sm:text-xl text-green-800 group-hover:text-green-600 transition-colors hidden xs:inline">LifeSet</span>
           </Link>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link to="/login" className="text-xs sm:text-sm font-medium text-gray-600 hover:text-green-700 transition-colors px-2 sm:px-4 py-2 rounded-xl hover:bg-green-50">
+          
+          {/* Buttons */}
+          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+            <Link to="/login" className="text-[11px] sm:text-sm font-medium text-gray-600 hover:text-green-700 transition-colors px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-green-50 whitespace-nowrap">
               Sign In
             </Link>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link to="/register" className="text-xs sm:text-sm font-semibold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all shadow-lg shadow-green-500/25 hover:shadow-green-500/40 whitespace-nowrap">
+              <Link to="/register" className="text-[11px] sm:text-sm font-semibold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-2.5 sm:px-5 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl transition-all shadow-lg shadow-green-500/25 hover:shadow-green-500/40 whitespace-nowrap">
                 <span className="hidden sm:inline">Get Started Free</span>
-                <span className="sm:hidden">Start</span>
+                <span className="sm:hidden">Get Started</span>
               </Link>
             </motion.div>
           </div>
