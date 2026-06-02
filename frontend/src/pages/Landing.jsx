@@ -211,30 +211,28 @@ export default function Landing() {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="fixed top-0 inset-x-0 z-50 bg-white/70 backdrop-blur-xl border-b border-green-100/50"
       >
-        <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-1.5 sm:gap-2 group flex-shrink-0 min-w-0">
+          <Link to="/" className="flex items-center gap-2 group">
             <motion.div 
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30 flex-shrink-0"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30"
               whileHover={{ scale: 1.1, rotate: 5 }}
               whileTap={{ scale: 0.95 }}
             >
               <span className="text-white text-sm sm:text-lg font-bold">L</span>
             </motion.div>
-            <span className="font-display text-base sm:text-xl text-green-800 group-hover:text-green-600 transition-colors hidden xs:inline">LifeSet</span>
+            <span className="font-display text-lg sm:text-xl text-green-800">LifeSet</span>
           </Link>
           
-          {/* Buttons */}
-          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
-            <Link to="/login" className="text-[11px] sm:text-sm font-medium text-gray-600 hover:text-green-700 transition-colors px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-green-50 whitespace-nowrap">
+          {/* Buttons - stacked on mobile */}
+          <div className="flex items-center">
+            <Link to="/login" className="text-[10px] sm:text-sm font-medium text-gray-600 px-1.5 sm:px-4 py-1 sm:py-2 rounded-lg hover:bg-green-50">
               Sign In
             </Link>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link to="/register" className="text-[11px] sm:text-sm font-semibold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-2.5 sm:px-5 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl transition-all shadow-lg shadow-green-500/25 hover:shadow-green-500/40 whitespace-nowrap">
-                <span className="hidden sm:inline">Get Started Free</span>
-                <span className="sm:hidden">Get Started</span>
-              </Link>
-            </motion.div>
+            <Link to="/register" className="text-[10px] sm:text-sm font-semibold bg-green-600 text-white px-2 sm:px-5 py-1 sm:py-2.5 rounded-lg sm:rounded-xl ml-1 sm:ml-2">
+              <span className="sm:hidden">Start</span>
+              <span className="hidden sm:inline">Get Started Free</span>
+            </Link>
           </div>
         </div>
       </motion.nav>
