@@ -4,11 +4,16 @@ LifeSet API - Vercel Serverless Function
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 import os
-import httpx
+import hashlib
+import json
+import time
+import base64
+import random
+import string
 
-app = FastAPI(title="LifeSet API", version="3.0.0")
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,84 +23,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ============ BASIC ENDPOINTS ============
-@app.get("/")
-def root():
-    return {"message": "LifeSet API running on Vercel", "status": "healthy"}
+# In-memory storage
+users_db: Dict[str, dict] = {}
+health_data_db: Dict[int, dict] = {}
 
+def hash_password(pw: str) -> str:
+    return hashlib.sha256(pw.encode()).hexdigest()
+
+def make_token(user_id: int, email: str, role: str) -> str:
+    payload = json.dumps({"user_id": user_id, "email": email, "role": role})
+    return base64.b64encode(payload.encode()).decode()
+
+@app.get("/")
 @app.get("/api")
-def api_root():
-    return {"status": "ok", "version": "3.0.0"}
+def root():
+    return {"message": "LifeSet API running!", "status": "healthy"}
 
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy"}
 
-# ============ CHATBOT ENDPOINT ============
-class ChatRequest(BaseModel):
-    message: str
-    history: List[dict] = []
-    health_score: Optional[dict] = None
-    user_profile: Optional[dict] = None
-    language: str = "en"
-
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-
-SYSTEM_PROMPT = """You are LifeSet Health Assistant — a warm, caring AI health assistant.
-- Answer health questions with accurate, helpful guidance
-- Be warm, conversational, and easy to understand
-- For serious symptoms, always recommend seeing a doctor
-- End health advice with: "Please consult your doctor for personalized advice."
-- If user speaks in Hindi or another language, respond in that language.
-"""
-
-@app.post("/api/chatbot/chat")
-async def chat(req: ChatRequest):
-    try:
-        if GROQ_API_KEY:
-            messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-            for h in req.history[-10:]:
-                role = "assistant" if h.get("role") == "assistant" else "user"
-                messages.append({"role": role, "content": h.get("content", "")})
-            messages.append({"role": "user", "content": req.message})
-            
-            async with httpx.AsyncClient() as client:
-                resp = await client.post(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {GROQ_API_KEY}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "model": "llama-3.1-8b-instant",
-                        "messages": messages,
-                        "max_tokens": 1024,
-                        "temperature": 0.7
-                    },
-                    timeout=30
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    reply = data["choices"][0]["message"]["content"]
-                    return {"reply": reply, "source": "groq"}
-        
-        return {
-            "reply": f"Thank you for your question. I'm your LifeSet Health Assistant. For accurate health advice, please consult with a healthcare professional.",
-            "source": "fallback"
-        }
-    except Exception as e:
-        return {
-            "reply": "I'm here to help with your health questions. Could you please rephrase your question?",
-            "source": "error"
-        }
-
-# ============ SIMPLE AUTH (for demo) ============
-users_db = {}
-
+# Auth
 class RegisterRequest(BaseModel):
     name: str
     email: str
     password: str
+    phone: Optional[str] = None
     role: str = "patient"
 
 class LoginRequest(BaseModel):
@@ -103,27 +56,75 @@ class LoginRequest(BaseModel):
     password: str
 
 @app.post("/api/auth/register")
-async def register(req: RegisterRequest):
+def register(req: RegisterRequest):
     if req.email in users_db:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(400, "Email already registered")
+    user_id = len(users_db) + 1
     users_db[req.email] = {
-        "name": req.name,
-        "email": req.email,
-        "password": req.password,
-        "role": req.role
+        "id": user_id, "name": req.name, "email": req.email,
+        "password_hash": hash_password(req.password), "role": req.role,
+        "is_verified": True
     }
-    return {"message": "Registration successful", "token": f"demo-token-{req.email}"}
+    return {"token": make_token(user_id, req.email, req.role), "user_id": user_id,
+            "name": req.name, "email": req.email, "role": req.role, "is_verified": True}
 
 @app.post("/api/auth/login")
-async def login(req: LoginRequest):
+def login(req: LoginRequest):
     user = users_db.get(req.email)
-    if not user or user["password"] != req.password:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    return {
-        "token": f"demo-token-{req.email}",
-        "user": {"name": user["name"], "email": user["email"], "role": user["role"]}
-    }
+    if not user or user["password_hash"] != hash_password(req.password):
+        raise HTTPException(401, "Invalid credentials")
+    return {"token": make_token(user["id"], req.email, user["role"]),
+            "user_id": user["id"], "name": user["name"], "email": req.email,
+            "role": user["role"], "is_verified": True}
 
 @app.get("/api/auth/me")
-async def get_me():
-    return {"name": "Demo User", "email": "demo@example.com", "role": "patient"}
+def get_me(token: str = ""):
+    return {"id": 1, "name": "User", "email": "user@example.com", "role": "patient"}
+
+# Chatbot
+class ChatRequest(BaseModel):
+    message: str
+    history: List[dict] = []
+    language: str = "en"
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+
+@app.post("/api/chatbot/chat")
+async def chat(req: ChatRequest):
+    if GROQ_API_KEY:
+        try:
+            import httpx
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
+                    json={"model": "llama-3.1-8b-instant", 
+                          "messages": [{"role": "system", "content": "You are LifeSet Health Assistant."},
+                                      {"role": "user", "content": req.message}],
+                          "max_tokens": 1024},
+                    timeout=30
+                )
+                if resp.status_code == 200:
+                    return {"reply": resp.json()["choices"][0]["message"]["content"]}
+        except:
+            pass
+    return {"reply": f"Thanks for asking about '{req.message}'. Please consult a doctor for medical advice."}
+
+# Health
+@app.get("/api/health/score/{user_id}")
+def get_health_score(user_id: int):
+    return {"overall_score": 75, "risks": {"heart": 30, "diabetes": 25, "stroke": 20}}
+
+@app.get("/api/health/risk/{user_id}")
+def get_risk(user_id: int):
+    return {"risks": [{"condition": "Heart Disease", "risk_level": "Low", "score": 30}],
+            "recommendations": ["Exercise regularly", "Eat healthy"]}
+
+@app.get("/api/wellness/tips")
+def get_tips():
+    return {"tips": [{"tip": "Drink 8 glasses of water daily"},
+                     {"tip": "Walk 30 minutes every day"}]}
+
+@app.get("/api/alerts/{user_id}")
+def get_alerts(user_id: int):
+    return {"alerts": [{"message": "Stay hydrated!", "type": "tip"}]}
