@@ -230,8 +230,7 @@ export default function Landing() {
               Sign In
             </Link>
             <Link to="/register" className="text-[10px] sm:text-sm font-semibold bg-green-600 text-white px-2 sm:px-5 py-1 sm:py-2.5 rounded-lg sm:rounded-xl">
-              <span className="sm:hidden">Sign Up</span>
-              <span className="hidden sm:inline">Get Started Free</span>
+              Sign Up
             </Link>
           </div>
         </div>
