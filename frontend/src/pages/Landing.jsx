@@ -224,13 +224,13 @@ export default function Landing() {
             <span className="font-display text-lg sm:text-xl text-green-800">LifeSet</span>
           </Link>
           
-          {/* Buttons - stacked on mobile */}
-          <div className="flex items-center">
-            <Link to="/login" className="text-[10px] sm:text-sm font-medium text-gray-600 px-1.5 sm:px-4 py-1 sm:py-2 rounded-lg hover:bg-green-50">
+          {/* Buttons */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Link to="/login" className="text-[10px] sm:text-sm font-semibold bg-green-100 text-green-700 border border-green-300 px-2 sm:px-4 py-1 sm:py-2 rounded-lg sm:rounded-xl hover:bg-green-200">
               Sign In
             </Link>
-            <Link to="/register" className="text-[10px] sm:text-sm font-semibold bg-green-600 text-white px-2 sm:px-5 py-1 sm:py-2.5 rounded-lg sm:rounded-xl ml-1 sm:ml-2">
-              <span className="sm:hidden">Start</span>
+            <Link to="/register" className="text-[10px] sm:text-sm font-semibold bg-green-600 text-white px-2 sm:px-5 py-1 sm:py-2.5 rounded-lg sm:rounded-xl">
+              <span className="sm:hidden">Sign Up</span>
               <span className="hidden sm:inline">Get Started Free</span>
             </Link>
           </div>
