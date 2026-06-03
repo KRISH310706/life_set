@@ -1,7 +1,7 @@
 import axios from 'axios'
 
-// API URL - /api routes to backend service on Vercel
-const API_BASE_URL = '/api/api'
+// API URL - Use Vercel backend
+const API_BASE_URL = 'https://life-set.vercel.app/api'
 
 const api = axios.create({ baseURL: API_BASE_URL })
 
